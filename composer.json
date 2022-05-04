@@ -3,7 +3,7 @@
     "description": "Client package for the Vonage Video API Server operations",
     "type": "library",
     "require": {
-        "vonage/client-core": "enhancements/fixes-for-video-dev@dev",
+        "vonage/client-core": "3.0.5",
         "vonage/jwt": "^0.3.0"
     },
     "require-dev": {
