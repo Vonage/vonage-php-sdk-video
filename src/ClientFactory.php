@@ -18,7 +18,7 @@ class ClientFactory
         $apiResource->setBaseUrl($baseUrl); 
         // $apiResource->setBaseUri('/');
         $apiResource->setIsHAL(false);
-        $apiResource->setAuthHandler(new KeypairHandler());
+        $apiResource->setAuthHandlers(new KeypairHandler());
         $apiResource->setCollectionPrototype(new IterableAPICollection());
         $apiResource->setCollectionName('items');
 

@@ -69,7 +69,7 @@ class ClientTest extends TestCase
             ->setIsHAL(false)
             ->setCollectionName('items')
             ->setCollectionPrototype(new IterableAPICollection())
-            ->setAuthHandler([new KeypairHandler()])
+            ->setAuthHandlers([new KeypairHandler()])
         ;
 
         $this->client = new Client($this->apiResource);
