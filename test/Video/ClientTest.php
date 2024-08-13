@@ -2,13 +2,16 @@
 
 namespace VonageTest\Video;
 
+use Lcobucci\JWT\Encoding\JoseEncoder;
+use Lcobucci\JWT\Token\Parser;
 use Prophecy\Argument;
 use Vonage\Video\Client;
 use Vonage\Client\APIResource;
-use Laminas\Diactoros\Response;
+use Lcobucci\JWT\Signer\None;
 use Lcobucci\JWT\Configuration;
 use PHPUnit\Framework\TestCase;
 use Vonage\Client as VonageClient;
+use VonageTest\HttpResponseTrait;
 use VonageTest\Psr7AssertionTrait;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Http\Message\RequestInterface;
@@ -30,6 +33,7 @@ class ClientTest extends TestCase
 {
     use ProphecyTrait;
     use Psr7AssertionTrait;
+    use HttpResponseTrait;
 
     /**
      * @var APIResource
@@ -57,6 +61,8 @@ class ClientTest extends TestCase
 
     public function setUp(): void
     {
+        $this->setResponseDir(__DIR__ . '/responses/');
+
         $this->vonageClient = $this->prophesize(VonageClient::class);
         $this->vonageClient->getRestUrl()->willReturn('https://rest.nexmo.com');
         $this->vonageClient->getApiUrl()->willReturn('https://api.nexmo.com');
@@ -69,7 +75,7 @@ class ClientTest extends TestCase
             ->setIsHAL(false)
             ->setCollectionName('items')
             ->setCollectionPrototype(new IterableAPICollection())
-            ->setAuthHandler([new KeypairHandler()])
+            ->setAuthHandlers([new KeypairHandler()])
         ;
 
         $this->client = new Client($this->apiResource);
@@ -304,7 +310,8 @@ class ClientTest extends TestCase
     public function testCanGenerateBasicClientToken()
     {
         $token = $this->client->generateClientToken('abcd');
-        $parser = Configuration::forUnsecuredSigner()->parser();
+        $parser = new Parser(new JoseEncoder());
+
         $claims = $parser->parse($token)->claims();
         $this->assertEquals($this->applicationId, $claims->get('application_id'));
         $this->assertEquals('session.connect', $claims->get('scope'));
@@ -315,7 +322,7 @@ class ClientTest extends TestCase
     public function testCanGeneratePublisherOnlyClientToken()
     {
         $token = $this->client->generateClientToken('abcd', ['role' => Role::PUBLISHER_ONLY]);
-        $parser = Configuration::forUnsecuredSigner()->parser();
+        $parser = new Parser(new JoseEncoder());
         $claims = $parser->parse($token)->claims();
         $this->assertEquals($this->applicationId, $claims->get('application_id'));
         $this->assertEquals('session.connect', $claims->get('scope'));
@@ -326,7 +333,8 @@ class ClientTest extends TestCase
     public function testCanGenerateClientTokenWithOptions()
     {
         $token = $this->client->generateClientToken('abcd', ['role' => Role::MODERATOR]);
-        $parser = Configuration::forUnsecuredSigner()->parser();
+        $parser = new Parser(new JoseEncoder());
+
         $claims = $parser->parse($token)->claims();
         $this->assertEquals($this->applicationId, $claims->get('application_id'));
         $this->assertEquals('session.connect', $claims->get('scope'));
@@ -631,10 +639,5 @@ class ClientTest extends TestCase
         }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('empty'));
 
         $this->client->addStreamToBroadcast($broadcastId, $streamId);
-    }
-
-    protected function getResponse(string $type = 'success', int $status = 200): Response
-    {
-        return new Response(fopen(__DIR__ . '/responses/' . $type . '.json', 'rb'), $status);
     }
 }
