@@ -7,10 +7,9 @@ use Lcobucci\JWT\Token\Parser;
 use Prophecy\Argument;
 use Vonage\Video\Client;
 use Vonage\Client\APIResource;
-use Lcobucci\JWT\Signer\None;
-use Lcobucci\JWT\Configuration;
 use PHPUnit\Framework\TestCase;
 use Vonage\Client as VonageClient;
+use Vonage\Video\Render;
 use VonageTest\HttpResponseTrait;
 use VonageTest\Psr7AssertionTrait;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -35,29 +34,21 @@ class ClientTest extends TestCase
     use Psr7AssertionTrait;
     use HttpResponseTrait;
 
-    /**
-     * @var APIResource
-     */
-    protected $apiResource;
+    protected APIResource $apiResource;
 
     /**
      * Sample Application ID to use in tests
-     * @var string
      */
-    protected $applicationId = 'd5e57267-1bd2-4d76-aa53-c1c1542efc14';
+    protected string $applicationId = 'd5e57267-1bd2-4d76-aa53-c1c1542efc14';
 
-    /**
-     * @var Client
-     */
-    protected $client;
+    protected Client $client;
 
     /**
      * Sample Session ID to use in tests
-     * @var string
      */
-    protected $sessionId = '2_999999999999999-MTYxODg4MTU5NjY3N35QY1VEUUl4MVhldEdKU2JCOWlyR2lHY3p-UH4';
+    protected string $sessionId = '2_999999999999999-MTYxODg4MTU5NjY3N35QY1VEUUl4MVhldEdKU2JCOWlyR2lHY3p-UH4';
 
-    protected $vonageClient;
+    protected VonageClient|\Prophecy\Prophecy\ObjectProphecy $vonageClient;
 
     public function setUp(): void
     {
@@ -639,5 +630,96 @@ class ClientTest extends TestCase
         }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('empty'));
 
         $this->client->addStreamToBroadcast($broadcastId, $streamId);
+    }
+
+    public function testCanStartExperienceComposerSessions(): void
+    {
+        $applicationId = $this->applicationId;
+
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $expected) {
+            $url = $request->getUri()->getPath();
+            $this->assertEquals('https://video.api.vonage.com/v2/project/' . $applicationId . '/render', $url);
+            $this->assertSame('POST', $request->getMethod());
+
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('render-start'));
+
+        $render = $this->client->startExperienceComposerSession(
+            '2_MX4xMDBfjE0Mzc2NzY1NDgwMTJ-TjMzfn4',
+            'e2343f23456g34709d2443a234',
+            'https://webapp.customer.com',
+            2900,
+            '1280x720',
+            'https://sendcallbacks.to.me',
+            [
+                'name' => 'Composed stream for live event'
+            ]
+        );
+
+        $this->assertInstanceOf(Render::class, $render);
+        $this->assertEquals('2_MX4xMDBfjE0Mzc2NzY1NDgwMTJ-TjMzfn4', $render->sessionId);
+        $this->assertEquals('started', $render->status);
+    }
+
+    public function testCanGetExperienceComposerSession(): void
+    {
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $expected) {
+            $url = $request->getUri()->getPath();
+            $this->assertEquals('https://video.api.vonage.com/v2/project/' . $applicationId . '/render/80abaf0d-25a3-4efc-968f-6268d620668d', $url);
+            $this->assertSame('GET', $request->getMethod());
+
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('render-get'));
+
+        $render = $this->client->getExperienceComposerSession('80abaf0d-25a3-4efc-968f-6268d620668d');
+
+        $this->assertInstanceOf(Render::class, $render);
+        $this->assertEquals('1_MX4yNzA4NjYxMn5-MTU0NzA4MDUyMTEzNn5sOXU5ZnlWYXplRnZGblV4RUo3dXJpZk1-fg', $render->sessionId);
+        $this->assertEquals('failed', $render->status);
+    }
+
+    public function testCanStopExperienceComposerSession(): void
+    {
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $expected) {
+            $url = $request->getUri()->getPath();
+            $this->assertEquals('https://video.api.vonage.com/v2/project/' . $applicationId . '/render/80abaf0d-25a3-4efc-968f-6268d620668d', $url);
+            $this->assertSame('DELETE', $request->getMethod());
+
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('render-stop'));
+
+        $response = $this->client->stopExperienceComposerSession('80abaf0d-25a3-4efc-968f-6268d620668d');
+
+        $this->assertTrue($response);
+    }
+
+    public function testCannotStopUnknownExperienceComposerSession(): void
+    {
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $expected) {
+            $url = $request->getUri()->getPath();
+            $this->assertEquals('https://video.api.vonage.com/v2/project/' . $applicationId . '/render/80abaf0d-25a3-4efc-968f-6268d620668d', $url);
+            $this->assertSame('DELETE', $request->getMethod());
+
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('render-stop-404'));
+
+        $response = $this->client->stopExperienceComposerSession('80abaf0d-25a3-4efc-968f-6268d620668d');
+
+        $this->assertFalse($response);
+    }
+
+    public function testCanListExperienceComposerSession(): void
+    {
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $expected) {
+            $url = $request->getUri()->getPath();
+            $this->assertEquals('https://video.api.vonage.com/v2/project/' . $applicationId . '/render', $url);
+            $this->assertSame('GET', $request->getMethod());
+
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('render-list'));
+
+        $response = $this->client->listExperienceComposerSessions();
+        $this->assertEquals('2', $response['count']);
+        $this->assertEquals('80abaf0d-25a3-4efc-968f-6268d620668d', $response['items'][0]['id']);
     }
 }
