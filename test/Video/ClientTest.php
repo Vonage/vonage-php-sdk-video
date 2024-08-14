@@ -5,6 +5,7 @@ namespace VonageTest\Video;
 use Lcobucci\JWT\Encoding\JoseEncoder;
 use Lcobucci\JWT\Token\Parser;
 use Prophecy\Argument;
+use Vonage\Video\CaptionOptions;
 use Vonage\Video\Client;
 use Vonage\Client\APIResource;
 use PHPUnit\Framework\TestCase;
@@ -784,5 +785,45 @@ class ClientTest extends TestCase
         $response = $this->client->connectAudio($sessionId, $token, $websocketConfig);
         $this->assertEquals('b0a5a8c7-dc38-459f-a48d-a7f2008da853', $response['id']);
         $this->assertEquals('7c0680fc-6274-4de5-a66f-d0648e8d3ac2', $response['captionsId']);
+    }
+
+    public function testCanStartCaptions(): void
+    {
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) {
+            $uri = $request->getUri();
+            $uriString = $uri->__toString();
+            $this->assertEquals('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/captions', $uriString);
+            $this->assertSame('POST', $request->getMethod());
+
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('captions-start'));
+
+        $captionsData = [
+            'languageCode' => 'en_GB',
+            'maxDuration' => 1800,
+            'partialCaptions' => true,
+            'statusCallbackUrl' => 'https://send-status-to.me'
+        ];
+
+        $captionOptions = new CaptionOptions($captionsData);
+
+        $result = $this->client->startCaptions('75173cd4-1847-4647-9701-4a61819bcee4', '75173cd4-1847-4647-9701-4a61819bcee4');
+        $this->assertEquals('7c0680fc-6274-4de5-a66f-d0648e8d3ac2', $result['captionsId']);
+    }
+
+    public function testCanStopCaptions(): void
+    {
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) {
+            $uri = $request->getUri();
+            $uriString = $uri->__toString();
+            $this->assertEquals('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/captions/75173cd4-1847-4647-9701-4a61819bcee4', $uriString);
+            $this->assertSame('POST', $request->getMethod());
+
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('captions-stop'));
+
+
+        $result = $this->client->stopCaptions('7c0680fc-6274-4de5-a66f-d0648e8d3ac2', '75173cd4-1847-4647-9701-4a61819bcee4');
+        $this->assertTrue($result);
     }
 }

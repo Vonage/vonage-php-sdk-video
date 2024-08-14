@@ -18,22 +18,7 @@ class WebsocketOptions implements ArrayHydrateInterface
 
     public function __construct($data = [])
     {
-        $this->uri = $data['uri'];
-
-        if (isset($data['streams'])) {
-            $this->streams = $data['streams'];
-        }
-
-        if (isset($data['headers'])) {
-            $this->headers = $data['headers'];
-        }
-
-        if (isset($data['audioRate'])) {
-            if ($data['audioRate'] !== 8000 && $data['audioRate'] !== 16000) {
-                throw new \InvalidArgumentException('Audio Rate must be 8000 or 16000');
-            }
-            $this->audioRate = $data['audioRate'];
-        }
+        $this->fromArray($data);
     }
 
     public function getUri(): string
@@ -41,7 +26,7 @@ class WebsocketOptions implements ArrayHydrateInterface
         return $this->uri;
     }
 
-    public function setUri(string $uri): WebsocketOptions
+    public function setUri(string $uri): self
     {
         $this->uri = $uri;
         return $this;
@@ -52,7 +37,7 @@ class WebsocketOptions implements ArrayHydrateInterface
         return $this->streams;
     }
 
-    public function setStreams(array $streams): WebsocketOptions
+    public function setStreams(array $streams): self
     {
         $this->streams = $streams;
         return $this;
@@ -63,7 +48,7 @@ class WebsocketOptions implements ArrayHydrateInterface
         return $this->headers;
     }
 
-    public function setHeaders(array $headers): WebsocketOptions
+    public function setHeaders(array $headers): self
     {
         $this->headers = $headers;
         return $this;
@@ -74,10 +59,14 @@ class WebsocketOptions implements ArrayHydrateInterface
         return $this->audioRate;
     }
 
-    public function setAudioRate(?int $audioRate): WebsocketOptions
+    public function setAudioRate(?int $audioRate): self
     {
-        $this->audioRate = $audioRate;
-        return $this;
+        if (isset($data['audioRate'])) {
+            if ($data['audioRate'] !== 8000 && $data['audioRate'] !== 16000) {
+                throw new \InvalidArgumentException('Audio Rate must be 8000 or 16000');
+            }
+            $this->audioRate = $data['audioRate'];
+        }
     }
 
     public function fromArray(array $data): self
