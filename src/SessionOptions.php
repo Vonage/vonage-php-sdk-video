@@ -51,9 +51,13 @@ class SessionOptions
         return $this->mediaMode;
     }
 
-    public function getE2ee(): ?bool
+    /**
+     * Returns string because http_build_query casts to int
+     * @return string|null
+     */
+    public function getE2ee(): ?string
     {
-        return $this->e2ee;
+        return $this->e2ee === true ? 'true' : ($this->e2ee === false ? 'false' : null);
     }
 
     public function setArchiveMode(string $archiveMode): self

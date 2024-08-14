@@ -10,6 +10,8 @@ use Vonage\Client\APIResource;
 use PHPUnit\Framework\TestCase;
 use Vonage\Client as VonageClient;
 use Vonage\Video\Render;
+use Vonage\Video\SessionOptions;
+use Vonage\Video\WebsocketOptions;
 use VonageTest\HttpResponseTrait;
 use VonageTest\Psr7AssertionTrait;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -87,6 +89,19 @@ class ClientTest extends TestCase
         $this->assertSame('99999999', $session->getProjectId());
         $this->assertEquals(new \DateTimeImmutable('2021-01-01 00:00:00'), $session->getCreatedDate());
         $this->assertSame('10.10.10.10', $session->getMediaServerUrl());
+    }
+
+    public function testCanCreateEndToEndEncryptedSession(): void
+    {
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) {
+            $this->assertRequestFormBodyContains('e2ee', 'true', $request);
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('create-session'));
+
+        $sessionOptions = new SessionOptions(['e2ee' => true]);
+        $session = $this->client->createSession($sessionOptions);
+
+        $this->assertSame($this->sessionId, $session->getSessionId());
     }
 
     public function testCanSendSignalToEveryoneInSession(): void
@@ -736,5 +751,38 @@ class ClientTest extends TestCase
         foreach ($response as $item) {
             $this->assertInstanceOf(Render::class, $item);
         }
+    }
+
+    public function testCanConnectAudioStreamWithWebsocket(): void
+    {
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) {
+            $uri = $request->getUri();
+            $uriString = $uri->__toString();
+            $this->assertEquals('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/connect', $uriString);
+            $this->assertSame('POST', $request->getMethod());
+
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('audio-connector-success'));
+
+        $sessionId = '1_MX4xMjM0NTY3OH4-VGh1IEZlYiAyNyAwNDozODozMSBQU1QgMjAxNH4wLjI0NDgyMjI';
+        $token = '063e72a4-64b4-43c8-9da5-eca071daab89';
+
+        $websocketConfig = [
+            'uri' => 'ws://service.com/wsendpoint',
+            'streams' => [
+                'we9r885',
+                '9238fujs'
+            ],
+            'headers' => [
+                'key1' => 'value'
+            ],
+            'audioRate' => 8000
+        ];
+
+        $websocketConfig = new WebsocketOptions($websocketConfig);
+
+        $response = $this->client->connectAudio($sessionId, $token, $websocketConfig);
+        $this->assertEquals('b0a5a8c7-dc38-459f-a48d-a7f2008da853', $response['id']);
+        $this->assertEquals('7c0680fc-6274-4de5-a66f-d0648e8d3ac2', $response['captionsId']);
     }
 }
