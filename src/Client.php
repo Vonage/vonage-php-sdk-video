@@ -432,20 +432,21 @@ class Client implements APIClient
     public function startCaptions(string $sessionId, string $token, ?CaptionOptions $captionOptions = null): ?array
     {
         $payload = [
-            'sessionId' => $sessionId
+            'sessionId' => $sessionId,
+            'token' => $token
         ];
 
         if (!is_null($captionOptions)) {
-            array_merge($payload, $captionOptions->toArray());
+            $payload = array_merge($payload, $captionOptions->toArray());
         }
 
         return $this->getAPIResource()->create($payload, '/v2/project/' . $this->credentials->application . '/captions');
     }
 
-    public function stopCaptions(string $sessionId, string $captionsId): bool
+    public function stopCaptions(string $captionsId): bool
     {
         try {
-            $this->getAPIResource()->create([], '/v2/project/' . $this->credentials->application . '/captions/' . $captionsId) . '/stop';
+            $this->getAPIResource()->create([], '/v2/project/' . $this->credentials->application . '/captions/' . $captionsId . '/stop');
         } catch (Request $e) {
             return false;
         }

@@ -761,6 +761,8 @@ class ClientTest extends TestCase
             $uriString = $uri->__toString();
             $this->assertEquals('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/connect', $uriString);
             $this->assertSame('POST', $request->getMethod());
+            $this->assertRequestJsonBodyContains('sessionId', '1_MX4xMjM0NTY3OH4-VGh1IEZlYiAyNyAwNDozODozMSBQU1QgMjAxNH4wLjI0NDgyMjI', $request);
+            $this->assertRequestJsonBodyContains('token', '063e72a4-64b4-43c8-9da5-eca071daab89', $request);
 
             return true;
         }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('audio-connector-success'));
@@ -794,6 +796,10 @@ class ClientTest extends TestCase
             $uriString = $uri->__toString();
             $this->assertEquals('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/captions', $uriString);
             $this->assertSame('POST', $request->getMethod());
+            $this->assertRequestJsonBodyContains('languageCode', 'en_GB', $request);
+            $this->assertRequestJsonBodyContains('maxDuration', 1800, $request);
+            $this->assertRequestJsonBodyContains('partialCaptions', true, $request);
+            $this->assertRequestJsonBodyContains('statusCallbackUrl', 'https://send-status-to.me', $request);
 
             return true;
         }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('captions-start'));
@@ -807,7 +813,7 @@ class ClientTest extends TestCase
 
         $captionOptions = new CaptionOptions($captionsData);
 
-        $result = $this->client->startCaptions('75173cd4-1847-4647-9701-4a61819bcee4', '75173cd4-1847-4647-9701-4a61819bcee4');
+        $result = $this->client->startCaptions('75173cd4-1847-4647-9701-4a61819bcee4', '75173cd4-1847-4647-9701-4a61819bcee4', $captionOptions);
         $this->assertEquals('7c0680fc-6274-4de5-a66f-d0648e8d3ac2', $result['captionsId']);
     }
 
@@ -816,14 +822,14 @@ class ClientTest extends TestCase
         $this->vonageClient->send(Argument::that(function (RequestInterface $request) {
             $uri = $request->getUri();
             $uriString = $uri->__toString();
-            $this->assertEquals('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/captions/75173cd4-1847-4647-9701-4a61819bcee4', $uriString);
+            $this->assertEquals('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/captions/7c0680fc-6274-4de5-a66f-d0648e8d3ac2/stop', $uriString);
             $this->assertSame('POST', $request->getMethod());
 
             return true;
         }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('captions-stop'));
 
 
-        $result = $this->client->stopCaptions('7c0680fc-6274-4de5-a66f-d0648e8d3ac2', '75173cd4-1847-4647-9701-4a61819bcee4');
+        $result = $this->client->stopCaptions('7c0680fc-6274-4de5-a66f-d0648e8d3ac2');
         $this->assertTrue($result);
     }
 }
