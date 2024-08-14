@@ -35,7 +35,7 @@ class Resolution
      */
     const RESOLUTION_PORTRAIT_UHD = "1080x1920";
 
-    static public function isValid(string $resolution)
+    static public function isValid(string $resolution): void
     {
         $whitelist = [
             static::RESOLUTION_LANDSCAPE_HD,

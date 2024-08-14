@@ -5,6 +5,9 @@ namespace Vonage\Video;
 
 use Vonage\Client\APIClient;
 use Vonage\Client\APIResource;
+use Vonage\Client\Exception\Request;
+use Vonage\Entity\Filter\EmptyFilter;
+use Vonage\Entity\Hydrator\ArrayHydrator;
 use Vonage\Video\Broadcast\Broadcast;
 use Vonage\Client\Credentials\Container;
 use Vonage\Client\Credentials\Keypair;
@@ -17,6 +20,7 @@ use Vonage\Video\Archive\Archive;
 use Vonage\Video\Archive\ArchiveConfig;
 use Vonage\Video\Archive\ArchiveLayout;
 use Vonage\Client\Credentials\CredentialsInterface;
+use Vonage\Video\Render;
 
 class Client implements APIClient
 {
@@ -75,11 +79,18 @@ class Client implements APIClient
         if ($options->getLocation()) {
             $data['location'] = $options->getLocation();
         }
+
+        if ($options->getE2ee()) {
+            $data['e2ee'] = $options->getE2ee();
+        }
         
         $response = $this->apiResource->submit(
             $data,
             '/session/create',
-            ['Accept' => 'application/json']
+            [
+                'Accept' => 'application/json',
+                'content-type' => 'application/x-www-form-urlencoded', // Hack because APIResource does not create form type with other headers
+            ]
         );
 
         $responseData = json_decode($response, true);
@@ -105,7 +116,7 @@ class Client implements APIClient
             [
                 'active' => false,
             ],
-            'v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/mute'
+            '/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/mute'
         );
         return new ProjectDetails($response);
     }
@@ -136,19 +147,19 @@ class Client implements APIClient
      */
     public function forceMuteAll(string $sessionId, array $excludedStreamIds = []): ProjectDetails
     {
-        $response = $this->apiResource->create(
+        $response = $this->getAPIResource()->create(
             [
                 'active' => true,
                 'excludedStreamIds' => $excludedStreamIds
             ],
-            'v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/mute'
+            '/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/mute'
         );
         return new ProjectDetails($response);
     }
 
     public function forceMuteStream(string $sessionId, string $streamId): ProjectDetails
     {
-        $response = $this->apiResource->create([], 'v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/stream/' . $streamId . '/mute');
+        $response = $this->getAPIResource()->create([], '/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/stream/' . $streamId . '/mute');
         return new ProjectDetails($response);
     }
 
@@ -169,28 +180,27 @@ class Client implements APIClient
         ];
 
         $options = array_merge($defaults, $options);
-        $token = TokenGenerator::factory($this->credentials->application, $this->credentials->key, $options);
 
-        return $token;
+        return TokenGenerator::factory($this->credentials->application, $this->credentials->key, $options);
     }
 
     public function getArchive(string $archiveId): Archive
     {
-        $response = $this->apiResource->get('v2/project/' . $this->credentials->application . '/archive/' . $archiveId);
+        $response = $this->getAPIResource()->get('v2/project/' . $this->credentials->application . '/archive/' . $archiveId);
 
         return new Archive($response);
     }
 
     public function getStream(string $sessionId, string $streamId)
     {
-        $response = $this->apiResource->get('v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/stream/' . $streamId);
+        $response = $this->getAPIResource()->get('v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/stream/' . $streamId);
 
         return new Stream($response);
     }
     
     public function getBroadcast(string $broadcastId): Broadcast
     {
-        $response = $this->apiResource->get(
+        $response = $this->getAPIResource()->get(
             'v2/project/' . $this->credentials->application . '/broadcast/' . $broadcastId
         );
 
@@ -278,7 +288,7 @@ class Client implements APIClient
 
     public function removeStreamFromBroadcast(string $broadcastId, string $streamId): void
     {
-        $this->apiResource->update(
+        $this->getAPIResource()->update(
             'v2/project/' . $this->credentials->application . '/broadcast/' . $broadcastId . '/streams',
             ['removeStream' => $streamId],
         );
@@ -291,7 +301,7 @@ class Client implements APIClient
             $url = '/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/connection/' . $connectionId . '/signal';
         }
 
-        $this->apiResource->create(
+        $this->getAPIResource()->create(
             ['type' => $type, 'data' => $data],
             $url
         );
@@ -299,7 +309,7 @@ class Client implements APIClient
 
     public function startArchive(ArchiveConfig $archiveConfig): Archive
     {
-        $response = $this->apiResource->create(
+        $response = $this->getAPIResource()->create(
             $archiveConfig->toArray(),
             '/v2/project/' . $this->credentials->application . '/archive'
         );
@@ -309,7 +319,7 @@ class Client implements APIClient
 
     public function startBroadcast(BroadcastConfig $config)
     {
-        $response = $this->apiResource->create(
+        $response = $this->getAPIResource()->create(
             $config->toArray(),
             '/v2/project/' . $this->credentials->application . '/broadcast'
         );
@@ -319,7 +329,7 @@ class Client implements APIClient
 
     public function stopArchive(string $archiveId): Archive
     {
-        $response = $this->apiResource->create(
+        $response = $this->getAPIResource()->create(
             [],
             '/v2/project/' . $this->credentials->application . '/archive/' . $archiveId . '/stop'
         );
@@ -337,11 +347,110 @@ class Client implements APIClient
 
     public function stopBroadcast(string $broadcastId): Broadcast
     {
-        $response = $this->apiResource->create(
+        $response = $this->getAPIResource()->create(
             [],
             '/v2/project/' . $this->credentials->application . '/broadcast/' . $broadcastId . '/stop'
         );
 
         return new Broadcast($response);
+    }
+
+    public function startExperienceComposerSession(
+        string $sessionId,
+        string $token,
+        string $url,
+        array $properties,
+        string $resolution = '1280x720',
+        int $maxDuration = 7200,
+    ): Render
+    {
+        $payload = [
+            'sessionId' => $sessionId,
+            'token' => $token,
+            'url' => $url,
+            'properties' => $properties,
+            'resolution' => $resolution,
+            'maxDuration' => $maxDuration,
+        ];
+
+        $response = $this->getAPIResource()->create(
+            $payload,
+            '/v2/project/' . $this->credentials->application . '/render'
+        );
+
+        return new Render($response);
+    }
+
+    public function getExperienceComposerSession(string $sessionId): Render
+    {
+        $response = $this->getAPIResource()->get('v2/project/' . $this->credentials->application . '/render/' . $sessionId);
+        return new Render($response);
+    }
+
+    public function stopExperienceComposerSession(string $sessionId): bool
+    {
+        try {
+            $response = $this->getAPIResource()->delete('v2/project/' . $this->credentials->application . '/render/' . $sessionId);
+        } catch (Request $e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function listExperienceComposerSessions(?EmptyFilter $filter): IterableAPICollection
+    {
+        if (is_null($filter)) {
+            $filter = new EmptyFilter();
+        }
+
+        /** @var IterableAPICollection $iterator */
+        $iterator = $this->getAPIResource()->search($filter, '/v2/project/' . $this->credentials->application . '/render');
+        $iterator->setNaiveCount(true);
+        $hydrator = new ConstructorHydrator();
+        $hydrator->setPrototype(Render::class);
+        $iterator->setHydrator($hydrator);
+
+        return $iterator;
+    }
+
+    public function connectAudio(string $sessionId, string $token, WebsocketOptions $websocketOptions): ?array
+    {
+        if (is_null($websocketOptions->getUri())) {
+            throw new \InvalidArgumentException('Websocket option "uri" is required.');
+        }
+
+        $payload = [
+            'sessionId' => $sessionId,
+            'token' => $token,
+            'websocket' => $websocketOptions->toArray(),
+        ];
+
+        return $this->getAPIResource()->create($payload, '/v2/project/' . $this->credentials->application . '/connect');
+    }
+
+    public function startCaptions(string $sessionId, string $token, ?CaptionOptions $captionOptions = null): ?array
+    {
+        $payload = [
+            'sessionId' => $sessionId,
+            'token' => $token
+        ];
+
+        if (!is_null($captionOptions)) {
+            $payload = array_merge($payload, $captionOptions->toArray());
+        }
+
+        return $this->getAPIResource()->create($payload, '/v2/project/' . $this->credentials->application . '/captions');
+    }
+
+    public function stopCaptions(string $captionsId): bool
+    {
+        try {
+            $this->getAPIResource()->create([], '/v2/project/' . $this->credentials->application . '/captions/' . $captionsId . '/stop');
+        } catch (Request $e) {
+            return false;
+        }
+
+        return true;
     }
 }

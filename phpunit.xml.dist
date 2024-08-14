@@ -9,5 +9,20 @@
     <testsuite name="default">
       <directory>test</directory>
     </testsuite>
+    <testsuite name="archive">
+      <file>ArchiveTest.php</file>
+    </testsuite>
+    <testsuite name="audio_connector">
+      <file>AudioConnectorTest.php</file>
+    </testsuite>
+    <testsuite name="broadcast">
+      <file>BroadcastTest.php</file>
+    </testsuite>
+    <testsuite name="captions">
+      <file>CaptionsTest.php</file>
+    </testsuite>
+    <testsuite name="experience_composer">
+      <file>ExperienceComposerTest.php</file>
+    </testsuite>
   </testsuites>
 </phpunit>
