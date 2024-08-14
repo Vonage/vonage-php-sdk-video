@@ -23,14 +23,17 @@ class SessionOptions
      */
     protected $mediaMode;
 
+    protected ?bool $e2ee;
+
     /**
-     * @param array{archiveMode: string, location: string, mediaMode: string} $data 
+     * @param array{archiveMode: string, location: string, mediaMode: string, e2ee: bool} $data
      */
     public function __construct($data = [])
     {
         $this->archiveMode = $data['archiveMode'] ?? ArchiveMode::MANUAL;
         $this->location = $data['location'] ?? null;
         $this->mediaMode = $data['mediaMode'] ?? MediaMode::RELAYED;
+        $this->e2ee = $data['e2ee'] ?? null;
     }
 
     public function getArchiveMode(): string
@@ -48,6 +51,11 @@ class SessionOptions
         return $this->mediaMode;
     }
 
+    public function getE2ee(): ?bool
+    {
+        return $this->e2ee;
+    }
+
     public function setArchiveMode(string $archiveMode): self
     {
         $this->archiveMode = $archiveMode;
@@ -63,6 +71,12 @@ class SessionOptions
     public function setMediaMode(string $mediaMode): self
     {
         $this->mediaMode = $mediaMode;
+        return $this;
+    }
+
+    public function setE2ee(?bool $e2ee): self
+    {
+        $this->e2ee = $e2ee;
         return $this;
     }
 }

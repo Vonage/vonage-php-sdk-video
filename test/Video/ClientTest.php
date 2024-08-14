@@ -61,7 +61,7 @@ class ClientTest extends TestCase
 
         $this->apiResource = new APIResource();
         $this->apiResource
-            ->setBaseUri('/')
+            ->setBaseUrl('https://video.api.vonage.com')
             ->setClient($this->vonageClient->reveal())
             ->setIsHAL(false)
             ->setCollectionName('items')
@@ -72,7 +72,7 @@ class ClientTest extends TestCase
         $this->client = new Client($this->apiResource);
     }
 
-    public function testCanCreateSession()
+    public function testCanCreateSession(): void
     {
         $this->vonageClient->send(Argument::that(function () {
             return true;
@@ -89,7 +89,7 @@ class ClientTest extends TestCase
         $this->assertSame('10.10.10.10', $session->getMediaServerUrl());
     }
 
-    public function testCanSendSignalToEveryoneInSession()
+    public function testCanSendSignalToEveryoneInSession(): void
     {
         $applicationId = $this->applicationId;
         $sessionId = $this->sessionId;
@@ -105,7 +105,7 @@ class ClientTest extends TestCase
         $this->client->sendSignal($sessionId, 'car', 'sedan');
     }
 
-    public function testCanSendSignalToSingleConnectionInSession()
+    public function testCanSendSignalToSingleConnectionInSession(): void
     {
         $applicationId = $this->applicationId;
         $sessionId = $this->sessionId;
@@ -122,7 +122,7 @@ class ClientTest extends TestCase
         $this->client->sendSignal($sessionId, 'car', 'sedan', $connectionId);
     }
 
-    public function testCanStartArchive()
+    public function testCanStartArchive(): void
     {
         $sessionId = $this->sessionId;
         $applicationId = $this->applicationId;
@@ -157,7 +157,7 @@ class ClientTest extends TestCase
         $this->assertSame($expected['url'], $archive->getUrl());
     }
 
-    public function testHandlesStartingArchiveOnceArchiveIsAlreadyStarted()
+    public function testHandlesStartingArchiveOnceArchiveIsAlreadyStarted(): void
     {
         $this->expectException(Request::class);
         $this->expectExceptionMessage('HTTP 409 Conflict');
@@ -173,7 +173,7 @@ class ClientTest extends TestCase
         $archive = $this->client->startArchive(new ArchiveConfig($this->sessionId));
     }
 
-    public function testHandlesNoClientsConnectedErrorWhenStartingArchive()
+    public function testHandlesNoClientsConnectedErrorWhenStartingArchive(): void
     {
         $this->expectException(Request::class);
         $this->expectExceptionMessage('Unexpected error');
@@ -189,7 +189,7 @@ class ClientTest extends TestCase
         $archive = $this->client->startArchive(new ArchiveConfig($this->sessionId));
     }
 
-    public function testCanStopArchive()
+    public function testCanStopArchive(): void
     {
         $archiveId = '506efa9e-7849-410e-bf76-dafd80b1d94e';
         $applicationId = $this->applicationId;
@@ -224,7 +224,7 @@ class ClientTest extends TestCase
         $this->assertSame($expected['url'], $archive->getUrl());
     }
 
-    public function testCanGetArchive()
+    public function testCanGetArchive(): void
     {
         $archiveId = '506efa9e-7849-410e-bf76-dafd80b1d94e';
         $applicationId = $this->applicationId;
@@ -259,7 +259,7 @@ class ClientTest extends TestCase
         $this->assertSame($expected['url'], $archive->getUrl());
     }
 
-    public function testCanGetAllArchives()
+    public function testCanGetAllArchives(): void
     {
         $applicationId = $this->applicationId;
 
@@ -298,7 +298,7 @@ class ClientTest extends TestCase
         }
     }
 
-    public function testCanGenerateBasicClientToken()
+    public function testCanGenerateBasicClientToken(): void
     {
         $token = $this->client->generateClientToken('abcd');
         $parser = new Parser(new JoseEncoder());
@@ -310,7 +310,7 @@ class ClientTest extends TestCase
         $this->assertEquals('video', $claims->get('sub'));
     }
 
-    public function testCanGeneratePublisherOnlyClientToken()
+    public function testCanGeneratePublisherOnlyClientToken(): void
     {
         $token = $this->client->generateClientToken('abcd', ['role' => Role::PUBLISHER_ONLY]);
         $parser = new Parser(new JoseEncoder());
@@ -321,7 +321,7 @@ class ClientTest extends TestCase
         $this->assertEquals('video', $claims->get('sub'));
     }
 
-    public function testCanGenerateClientTokenWithOptions()
+    public function testCanGenerateClientTokenWithOptions(): void
     {
         $token = $this->client->generateClientToken('abcd', ['role' => Role::MODERATOR]);
         $parser = new Parser(new JoseEncoder());
@@ -333,14 +333,12 @@ class ClientTest extends TestCase
         $this->assertEquals(Role::MODERATOR, $claims->get('role'));
     }
 
-    public function testCanMuteAStream()
+    public function testCanMuteAStream(): void
     {
-        $applicationId = $this->applicationId;
-        $sessionId = 'abcd';
-        $streamId = '1234';
-
-        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $sessionId, $streamId) {
-            $this->assertSame('/v2/project/' . $applicationId . '/session/' . $sessionId . '/stream/' . $streamId . '/mute', $request->getUri()->getPath());
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) {
+            $uri = $request->getUri();
+            $uriString = $uri->__toString();
+            $this->assertSame('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/session/abcd/stream/1234/mute', $uriString);
             $this->assertSame('POST', $request->getMethod());
 
             return true;
@@ -350,33 +348,14 @@ class ClientTest extends TestCase
         $this->assertEquals('12312', $response->getId());
     }
 
-    public function testCanMuteAllStreams()
+    public function testCanMuteAllStreams(): void
     {
-        $applicationId = $this->applicationId;
-        $sessionId = 'abcd';
-        $excludedStreamIds = [];
-
-        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $sessionId, $excludedStreamIds) {
-            $this->assertSame('/v2/project/' . $applicationId . '/session/' . $sessionId . '/mute', $request->getUri()->getPath());
-            $this->assertSame('POST', $request->getMethod());
-            $this->assertRequestJsonBodyContains('active', true, $request);
-            $this->assertRequestJsonBodyContains('excludedStreamIds', $excludedStreamIds, $request);
-
-            return true;
-        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('project-details'));
-
-        $response = $this->client->forceMuteAll('abcd');
-        $this->assertEquals('12312', $response->getId());
-    }
-
-    public function testCanMuteMostStreams()
-    {
-        $applicationId = $this->applicationId;
-        $sessionId = 'abcd';
         $excludedStreamIds = ['1234'];
 
-        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $sessionId, $excludedStreamIds) {
-            $this->assertSame('/v2/project/' . $applicationId . '/session/' . $sessionId . '/mute', $request->getUri()->getPath());
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($excludedStreamIds) {
+            $uri = $request->getUri();
+            $uriString = $uri->__toString();
+            $this->assertSame('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/session/abcd/mute', $uriString);
             $this->assertSame('POST', $request->getMethod());
             $this->assertRequestJsonBodyContains('active', true, $request);
             $this->assertRequestJsonBodyContains('excludedStreamIds', $excludedStreamIds, $request);
@@ -388,13 +367,31 @@ class ClientTest extends TestCase
         $this->assertEquals('12312', $response->getId());
     }
 
-    public function testCanDisableMute()
+    public function testCanMuteMostStreams(): void
     {
-        $applicationId = $this->applicationId;
-        $sessionId = 'abcd';
+        $excludedStreamIds = ['1234'];
 
-        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $sessionId) {
-            $this->assertSame('/v2/project/' . $applicationId . '/session/' . $sessionId . '/mute', $request->getUri()->getPath());
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($excludedStreamIds) {
+            $uri = $request->getUri();
+            $uriString = $uri->__toString();
+            $this->assertSame('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/session/abcd/mute', $uriString);
+            $this->assertSame('POST', $request->getMethod());
+            $this->assertRequestJsonBodyContains('active', true, $request);
+            $this->assertRequestJsonBodyContains('excludedStreamIds', $excludedStreamIds, $request);
+
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('project-details'));
+
+        $response = $this->client->forceMuteAll('abcd', $excludedStreamIds);
+        $this->assertEquals('12312', $response->getId());
+    }
+
+    public function testCanDisableMute(): void
+    {
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) {
+            $uri = $request->getUri();
+            $uriString = $uri->__toString();
+            $this->assertSame('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/session/abcd/mute', $uriString);
             $this->assertSame('POST', $request->getMethod());
             $this->assertRequestJsonBodyContains('active', false, $request);
 
@@ -405,7 +402,7 @@ class ClientTest extends TestCase
         $this->assertEquals('12312', $response->getId());
     }
 
-    public function testCanDisconnectAClient()
+    public function testCanDisconnectAClient(): void
     {
         $applicationId = $this->applicationId;
         $sessionId = 'abcd';
@@ -420,7 +417,7 @@ class ClientTest extends TestCase
         $this->client->disconnectClient($sessionId, $connectionId);
     }
 
-    public function testCanUpdateArchiveLayout()
+    public function testCanUpdateArchiveLayout(): void
     {
         $applicationId = $this->applicationId;
         $archiveId = 'abcd';
@@ -435,7 +432,7 @@ class ClientTest extends TestCase
         $this->client->updateArchiveLayout($archiveId, ArchiveLayout::getBestFit());
     }
 
-    public function testCanCreateCustomLayout()
+    public function testCanCreateCustomLayout(): void
     {
         $applicationId = $this->applicationId;
         $archiveId = 'abcd';
@@ -452,7 +449,7 @@ class ClientTest extends TestCase
         $this->client->updateArchiveLayout($archiveId, ArchiveLayout::createCustom($stylesheet));
     }
 
-    public function testCanSetScreenshareLayoutType()
+    public function testCanSetScreenshareLayoutType(): void
     {
         $applicationId = $this->applicationId;
         $archiveId = 'abcd';
@@ -471,7 +468,7 @@ class ClientTest extends TestCase
         $this->client->updateArchiveLayout($archiveId, $layout);
     }
 
-    public function testCanDeleteAnArchive()
+    public function testCanDeleteAnArchive(): void
     {
         $applicationId = $this->applicationId;
         $archiveId = 'abcd';
@@ -485,7 +482,7 @@ class ClientTest extends TestCase
         $this->client->deleteArchive($archiveId);
     }
 
-    public function testCanGetStream()
+    public function testCanGetStream(): void
     {
         $applicationId = $this->applicationId;
         $sessionId = 'abcd';
@@ -505,7 +502,7 @@ class ClientTest extends TestCase
         $this->assertEquals(['full'], $stream->getLayoutClassList());
     }
 
-    public function testCanListStreams()
+    public function testCanListStreams(): void
     {
         $applicationId = $this->applicationId;
         $sessionId = 'abcd';
@@ -521,7 +518,7 @@ class ClientTest extends TestCase
         $this->assertEquals(2, $response->count());
     }
     
-    public function testCanStartABroadcast()
+    public function testCanStartABroadcast(): void
     {
         $applicationId = $this->applicationId;
         $sessionId = $this->sessionId;
@@ -561,7 +558,7 @@ class ClientTest extends TestCase
         $this->assertEquals($expected['resolution'], $broadcast->getResolution());
     }
 
-    public function testCanStopABroadcast()
+    public function testCanStopABroadcast(): void
     {
         $applicationId = $this->applicationId;
         $expected = json_decode($this->getResponse('broadcast-stop')->getBody()->getContents(), true);
@@ -584,7 +581,7 @@ class ClientTest extends TestCase
         $this->assertEquals($expected['resolution'], $broadcast->getResolution());
     }
 
-    public function testCanListBroadcasts()
+    public function testCanListBroadcasts(): void
     {
         $applicationId = $this->applicationId;
         $expected = json_decode($this->getResponse('broadcast-list')->getBody()->getContents(), true);
@@ -612,7 +609,7 @@ class ClientTest extends TestCase
         }
     }
 
-    public function testCanAddStreamToBroadcast()
+    public function testCanAddStreamToBroadcast(): void
     {
         $applicationId = $this->applicationId;
         $streamId = '12312312-3811-4726-b508-e41a0f96c68f';
@@ -634,11 +631,14 @@ class ClientTest extends TestCase
 
     public function testCanStartExperienceComposerSessions(): void
     {
-        $applicationId = $this->applicationId;
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) {
+            $uri = $request->getUri();
+            $uriString = $uri->__toString();
+            $this->assertEquals(
+                'https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/render',
+                $uriString
+            );
 
-        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $expected) {
-            $url = $request->getUri()->getPath();
-            $this->assertEquals('https://video.api.vonage.com/v2/project/' . $applicationId . '/render', $url);
             $this->assertSame('POST', $request->getMethod());
 
             return true;
@@ -648,12 +648,11 @@ class ClientTest extends TestCase
             '2_MX4xMDBfjE0Mzc2NzY1NDgwMTJ-TjMzfn4',
             'e2343f23456g34709d2443a234',
             'https://webapp.customer.com',
-            2900,
-            '1280x720',
-            'https://sendcallbacks.to.me',
             [
                 'name' => 'Composed stream for live event'
-            ]
+            ],
+            '1280x720'.
+            2900,
         );
 
         $this->assertInstanceOf(Render::class, $render);
@@ -663,9 +662,10 @@ class ClientTest extends TestCase
 
     public function testCanGetExperienceComposerSession(): void
     {
-        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $expected) {
-            $url = $request->getUri()->getPath();
-            $this->assertEquals('https://video.api.vonage.com/v2/project/' . $applicationId . '/render/80abaf0d-25a3-4efc-968f-6268d620668d', $url);
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) {
+            $uri = $request->getUri();
+            $uriString = $uri->__toString();
+            $this->assertEquals('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/render/80abaf0d-25a3-4efc-968f-6268d620668d', $uriString);
             $this->assertSame('GET', $request->getMethod());
 
             return true;
@@ -680,9 +680,10 @@ class ClientTest extends TestCase
 
     public function testCanStopExperienceComposerSession(): void
     {
-        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $expected) {
-            $url = $request->getUri()->getPath();
-            $this->assertEquals('https://video.api.vonage.com/v2/project/' . $applicationId . '/render/80abaf0d-25a3-4efc-968f-6268d620668d', $url);
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) {
+            $uri = $request->getUri();
+            $uriString = $uri->__toString();
+            $this->assertEquals('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/render/80abaf0d-25a3-4efc-968f-6268d620668d', $uriString);
             $this->assertSame('DELETE', $request->getMethod());
 
             return true;
@@ -695,13 +696,14 @@ class ClientTest extends TestCase
 
     public function testCannotStopUnknownExperienceComposerSession(): void
     {
-        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $expected) {
-            $url = $request->getUri()->getPath();
-            $this->assertEquals('https://video.api.vonage.com/v2/project/' . $applicationId . '/render/80abaf0d-25a3-4efc-968f-6268d620668d', $url);
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) {
+            $uri = $request->getUri();
+            $uriString = $uri->__toString();
+            $this->assertEquals('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/render/80abaf0d-25a3-4efc-968f-6268d620668d', $uriString);
             $this->assertSame('DELETE', $request->getMethod());
 
             return true;
-        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('render-stop-404'));
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('render-stop-404', 404));
 
         $response = $this->client->stopExperienceComposerSession('80abaf0d-25a3-4efc-968f-6268d620668d');
 
@@ -710,16 +712,29 @@ class ClientTest extends TestCase
 
     public function testCanListExperienceComposerSession(): void
     {
-        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $expected) {
-            $url = $request->getUri()->getPath();
-            $this->assertEquals('https://video.api.vonage.com/v2/project/' . $applicationId . '/render', $url);
+        $requestCount = 0;
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use (&$requestCount) {
+            $requestCount++;
+            $uri = $request->getUri();
+            $uriString = $uri->__toString();
+
+            if ($requestCount == 1) {
+                $this->assertEquals('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/render?offset=0&count=50', $uriString);
+            }
+
+            if ($requestCount == 2) {
+                $this->assertEquals('https://video.api.vonage.com/v2/project/d5e57267-1bd2-4d76-aa53-c1c1542efc14/render?offset=2&count=50', $uriString);
+            }
+
             $this->assertSame('GET', $request->getMethod());
 
             return true;
-        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('render-list'));
+        }))->willReturn($this->getResponse('render-list'), $this->getResponse('render-list-finished'));
 
-        $response = $this->client->listExperienceComposerSessions();
-        $this->assertEquals('2', $response['count']);
-        $this->assertEquals('80abaf0d-25a3-4efc-968f-6268d620668d', $response['items'][0]['id']);
+        $response = $this->client->listExperienceComposerSessions(null);
+
+        foreach ($response as $item) {
+            $this->assertInstanceOf(Render::class, $item);
+        }
     }
 }

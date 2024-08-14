@@ -5,6 +5,9 @@ namespace Vonage\Video;
 
 use Vonage\Client\APIClient;
 use Vonage\Client\APIResource;
+use Vonage\Client\Exception\Request;
+use Vonage\Entity\Filter\EmptyFilter;
+use Vonage\Entity\Hydrator\ArrayHydrator;
 use Vonage\Video\Broadcast\Broadcast;
 use Vonage\Client\Credentials\Container;
 use Vonage\Client\Credentials\Keypair;
@@ -17,6 +20,7 @@ use Vonage\Video\Archive\Archive;
 use Vonage\Video\Archive\ArchiveConfig;
 use Vonage\Video\Archive\ArchiveLayout;
 use Vonage\Client\Credentials\CredentialsInterface;
+use Vonage\Video\Render;
 
 class Client implements APIClient
 {
@@ -75,6 +79,10 @@ class Client implements APIClient
         if ($options->getLocation()) {
             $data['location'] = $options->getLocation();
         }
+
+        if ($options->getE2ee()) {
+            $data['e2ee'] = $options->getE2ee();
+        }
         
         $response = $this->apiResource->submit(
             $data,
@@ -105,7 +113,7 @@ class Client implements APIClient
             [
                 'active' => false,
             ],
-            'v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/mute'
+            '/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/mute'
         );
         return new ProjectDetails($response);
     }
@@ -141,14 +149,14 @@ class Client implements APIClient
                 'active' => true,
                 'excludedStreamIds' => $excludedStreamIds
             ],
-            'v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/mute'
+            '/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/mute'
         );
         return new ProjectDetails($response);
     }
 
     public function forceMuteStream(string $sessionId, string $streamId): ProjectDetails
     {
-        $response = $this->apiResource->create([], 'v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/stream/' . $streamId . '/mute');
+        $response = $this->apiResource->create([], '/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/stream/' . $streamId . '/mute');
         return new ProjectDetails($response);
     }
 
@@ -343,5 +351,64 @@ class Client implements APIClient
         );
 
         return new Broadcast($response);
+    }
+
+    public function startExperienceComposerSession(
+        string $sessionId,
+        string $token,
+        string $url,
+        array $properties,
+        string $resolution = '1280x720',
+        int $maxDuration = 7200,
+    ): Render
+    {
+        $payload = [
+            'sessionId' => $sessionId,
+            'token' => $token,
+            'url' => $url,
+            'properties' => $properties,
+            'resolution' => $resolution,
+            'maxDuration' => $maxDuration,
+        ];
+
+        $response = $this->apiResource->create(
+            $payload,
+            '/v2/project/' . $this->credentials->application . '/render'
+        );
+
+        return new Render($response);
+    }
+
+    public function getExperienceComposerSession(string $sessionId): Render
+    {
+        $response = $this->apiResource->get('v2/project/' . $this->credentials->application . '/render/' . $sessionId);
+        return new Render($response);
+    }
+
+    public function stopExperienceComposerSession(string $sessionId): bool
+    {
+        try {
+            $response = $this->apiResource->delete('v2/project/' . $this->credentials->application . '/render/' . $sessionId);
+        } catch (Request $e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function listExperienceComposerSessions(?EmptyFilter $filter): IterableAPICollection
+    {
+        if (is_null($filter)) {
+            $filter = new EmptyFilter();
+        }
+
+        /** @var IterableAPICollection $iterator */
+        $iterator = $this->apiResource->search($filter, '/v2/project/' . $this->credentials->application . '/render');
+        $iterator->setNaiveCount(true);
+        $hydrator = new ConstructorHydrator();
+        $hydrator->setPrototype(Render::class);
+        $iterator->setHydrator($hydrator);
+
+        return $iterator;
     }
 }
