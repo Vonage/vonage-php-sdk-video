@@ -16,7 +16,6 @@ class ClientFactory
         /** @var APIResource $apiResource */
         $apiResource = $containerInterface->make(APIResource::class);
         $apiResource->setBaseUrl($baseUrl);
-        // $apiResource->setBaseUri('/');
         $apiResource->setIsHAL(false);
         $apiResource->setAuthHandlers(new KeypairHandler());
         $apiResource->setCollectionPrototype(new IterableAPICollection());

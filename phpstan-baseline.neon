@@ -26,11 +26,6 @@ parameters:
 			path: src/Client.php
 
 		-
-			message: "#^Call to an undefined method Vonage\\\\Client\\\\APIResource\\:\\:setAuthHandler\\(\\)\\.$#"
-			count: 1
-			path: src/ClientFactory.php
-
-		-
 			message: "#^Default value of the parameter \\#1 \\$data \\(array\\{\\}\\) of method Vonage\\\\Video\\\\SessionOptions\\:\\:__construct\\(\\) is incompatible with type array\\{archiveMode\\: string, location\\: string, mediaMode\\: string, e2ee\\: bool\\}\\.$#"
 			count: 1
 			path: src/SessionOptions.php
