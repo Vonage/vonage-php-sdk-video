@@ -7,7 +7,7 @@
         "vonage/jwt": "^0.5.0"
     },
     "require-dev": {
-        "phpstan/phpstan": "^0.12.84",
+        "phpstan/phpstan": "^1.10",
         "phpunit/phpunit": "^9.5",
         "squizlabs/php_codesniffer": "^3.6",
         "phpspec/prophecy-phpunit": "^2.0",
@@ -28,6 +28,16 @@
         {
             "name": "Chris Tankersley",
             "email": "chris.tankersley@vonage.com"
+        },
+        {
+            "name": "James Seconde",
+            "email": "jim.seconde@vonage.com"
         }
-    ]
+    ],
+    "scripts": {
+        "cs-check": "phpcs",
+        "cs-fix": "phpcbf",
+        "test": "phpunit",
+        "phpstan": "phpstan analyse -l 2 src"
+    }
 }

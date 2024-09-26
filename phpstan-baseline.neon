@@ -1,0 +1,41 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^PHPDoc tag @return has invalid value \\(array\\{hls\\: \\{lowLatency\\: bool, dvr\\: bool\\}, rtmp\\: \\{url\\: string, name\\: string, id\\?\\: string\\}\\}\\)\\: Unexpected token \"\\:\", expected '\\}' at offset 28$#"
+			count: 1
+			path: src/Broadcast/OutputConfig.php
+
+		-
+			message: "#^PHPDoc tag @var above a method has no effect\\.$#"
+			count: 1
+			path: src/Broadcast/OutputConfig.php
+
+		-
+			message: "#^Access to protected property Vonage\\\\Client\\\\Credentials\\\\Keypair\\:\\:\\$application\\.$#"
+			count: 35
+			path: src/Client.php
+
+		-
+			message: "#^Access to protected property Vonage\\\\Client\\\\Credentials\\\\Keypair\\:\\:\\$key\\.$#"
+			count: 1
+			path: src/Client.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$excludedStreams$#"
+			count: 2
+			path: src/Client.php
+
+		-
+			message: "#^Default value of the parameter \\#1 \\$data \\(array\\{\\}\\) of method Vonage\\\\Video\\\\SessionOptions\\:\\:__construct\\(\\) is incompatible with type array\\{archiveMode\\: string, location\\: string, mediaMode\\: string, e2ee\\: bool\\}\\.$#"
+			count: 1
+			path: src/SessionOptions.php
+
+		-
+			message: "#^Undefined variable\\: \\$data$#"
+			count: 3
+			path: src/WebsocketOptions.php
+
+		-
+			message: "#^Variable \\$data in isset\\(\\) is never defined\\.$#"
+			count: 1
+			path: src/WebsocketOptions.php

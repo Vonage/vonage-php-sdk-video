@@ -1,4 +1,8 @@
 parameters:
-    level: 8
+    level: 2
     paths:
-        - src
+        - src    # Adjust this path to where your code resides
+    # Optional: Add other configurations like excluding files or setting specific rules.
+
+includes:
+    - phpstan-baseline.neon

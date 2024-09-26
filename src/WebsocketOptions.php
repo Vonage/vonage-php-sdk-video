@@ -67,6 +67,7 @@ class WebsocketOptions implements ArrayHydrateInterface
             }
             $this->audioRate = $data['audioRate'];
         }
+        return $this;
     }
 
     public function fromArray(array $data): self
