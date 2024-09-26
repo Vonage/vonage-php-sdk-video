@@ -15,10 +15,10 @@ class ClientFactory
         $baseUrl = getenv('VONAGE_VIDEO_API_SERVER_URL') ?: 'https://video.api.vonage.com';
         /** @var APIResource $apiResource */
         $apiResource = $containerInterface->make(APIResource::class);
-        $apiResource->setBaseUrl($baseUrl); 
+        $apiResource->setBaseUrl($baseUrl);
         // $apiResource->setBaseUri('/');
         $apiResource->setIsHAL(false);
-        $apiResource->setAuthHandler(new KeypairHandler());
+        $apiResource->setAuthHandlers(new KeypairHandler());
         $apiResource->setCollectionPrototype(new IterableAPICollection());
         $apiResource->setCollectionName('items');
 
