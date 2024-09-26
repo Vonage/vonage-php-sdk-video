@@ -8,7 +8,7 @@
 
 ![The Vonage logo](./vonage_logo.png)
 
-*This library requires a minimum PHP version of 8.0*
+*This library requires a minimum PHP version of 8.1*
 
 This is a PHP client library for the Vonage Video API. It extends the
 [Vonage PHP library](https://raw.githubusercontent.com/Vonage/vonage-php-sdk-core). To use this, you'll need a Vonage account. Sign up [for free at
