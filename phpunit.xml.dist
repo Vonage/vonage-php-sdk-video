@@ -10,19 +10,19 @@
       <directory>test</directory>
     </testsuite>
     <testsuite name="archive">
-      <file>ArchiveTest.php</file>
+      <file>test/Video/ArchiveTest.php</file>
     </testsuite>
     <testsuite name="audio_connector">
-      <file>AudioConnectorTest.php</file>
+      <file>test/Video/AudioConnectorTest.php</file>
     </testsuite>
     <testsuite name="broadcast">
-      <file>BroadcastTest.php</file>
+      <file>test/Video/BroadcastTest.php</file>
     </testsuite>
     <testsuite name="captions">
-      <file>CaptionsTest.php</file>
+      <file>test/Video/CaptionsTest.php</file>
     </testsuite>
     <testsuite name="experience_composer">
-      <file>ExperienceComposerTest.php</file>
+      <file>test/Video/ExperienceComposerTest.php</file>
     </testsuite>
   </testsuites>
 </phpunit>
