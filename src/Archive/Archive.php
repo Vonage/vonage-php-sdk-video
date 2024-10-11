@@ -133,7 +133,7 @@ class Archive implements \JsonSerializable
         $this->sha256sum = $data['sha256sum'];
         $this->password = $data['password'];
         $this->updatedAt = $data['updatedAt'];
-        $this->resolution = $data['resolution'];
+        $this->resolution = $data['resolution'] ?? '';
         $this->event = $data['event'];
         $this->url = $data['url'];
     }
