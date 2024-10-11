@@ -279,4 +279,20 @@ class ArchiveTest extends TestCase
         }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('empty', 204));
         $this->client->updateArchiveLayout($archiveId, ArchiveLayout::getBestFit());
     }
+
+    public function testWillHandleMissingResolution(): void
+    {
+        $sessionId = $this->sessionId;
+        $applicationId = $this->applicationId;
+
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId) {
+            $this->assertSame('/v2/project/' . $applicationId . '/archive', $request->getUri()->getPath());
+            $this->assertSame('POST', $request->getMethod());
+
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('archive-missing-resolution'));
+
+        $archive = $this->client->startArchive(new ArchiveConfig($sessionId));
+        $this->assertEquals('', $archive->getResolution());
+    }
 }

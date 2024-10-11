@@ -1,0 +1,19 @@
+{
+    "id": "d40d69ef-511c-493d-87e0-ca6a5c97e234",
+    "status": "started",
+    "name": "Getting Started Sample Archive",
+    "reason": "",
+    "sessionId": "2_999999999999999-MTYxODg4MTU5NjY3N35QY1VEUUl4MVhldEdKU2JCOWlyR2lHY3p-UH4",
+    "applicationId": "d5e57267-1bd2-4d76-aa53-c1c1542efc14",
+    "createdAt": 1621002382206,
+    "size": 0,
+    "duration": 0,
+    "outputMode": "composed",
+    "hasAudio": true,
+    "hasVideo": true,
+    "sha256sum": "",
+    "password": "",
+    "updatedAt": 1621002382289,
+    "event": "archive",
+    "url": null
+}
