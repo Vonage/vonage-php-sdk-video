@@ -18,20 +18,17 @@ class ArchiveConfig implements \JsonSerializable
      */
     const OUTPUT_MODE_INDIVIDUAL = "individual";
 
-    /**
-     * @var string
-     */
-    protected $sessionId;
+    const MIN_BITRATE = 1000000;
 
-    /**
-     * @var bool
-     */
-    protected $hasAudio = true;
+    const MAX_BITRATE = 6000000;
 
-    /**
-     * @var bool
-     */
-    protected $hasVideo = true;
+    protected string $sessionId;
+
+    protected bool $hasAudio = true;
+
+    protected bool $hasVideo = true;
+
+    protected ?int $maxBitrate = null;
 
     /**
      * @var Layout
@@ -146,6 +143,28 @@ class ArchiveConfig implements \JsonSerializable
         return $this->toArray();
     }
 
+    public function getMaxBitrate(): ?int
+    {
+        return $this->maxBitrate;
+    }
+
+    public function setMaxBitrate(?int $maxBitrate): ArchiveConfig
+    {
+        $range = [
+            'options' => [
+                'min_range' => self::MIN_BITRATE,
+                'max_range' => self::MAX_BITRATE
+            ]
+        ];
+
+        if (!filter_var($maxBitrate, FILTER_VALIDATE_INT, $range)) {
+            throw new \OutOfBoundsException('MaxBitrate ' . $maxBitrate . ' is not valid');
+        }
+
+        $this->maxBitrate = $maxBitrate;
+        return $this;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -171,6 +190,10 @@ class ArchiveConfig implements \JsonSerializable
 
         if ($this->getResolution()) {
             $data['resolution'] = $this->getResolution();
+        }
+
+        if ($this->getMaxBitrate()) {
+            $data['maxBitrate'] = $this->getMaxBitrate();
         }
 
         return $data;

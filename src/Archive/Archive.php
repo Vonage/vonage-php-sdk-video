@@ -41,6 +41,8 @@ class Archive implements \JsonSerializable
      */
     protected $hasVideo;
 
+    protected int $maxBitrate;
+
     /**
      * ID of the archive
      * @var string
@@ -130,6 +132,11 @@ class Archive implements \JsonSerializable
         $this->outputMode = $data['outputMode'];
         $this->hasAudio = $data['hasAudio'];
         $this->hasVideo = $data['hasVideo'];
+
+        if (isset($data['maxBitrate'])) {
+            $this->maxBitrate = $data['maxBitrate'];
+        }
+
         $this->sha256sum = $data['sha256sum'];
         $this->password = $data['password'];
         $this->updatedAt = $data['updatedAt'];
@@ -156,6 +163,18 @@ class Archive implements \JsonSerializable
     public function getEvent(): string
     {
         return $this->event;
+    }
+
+    public function setMaxBitrate(int $maxBitrate): self
+    {
+        $this->maxBitrate = $maxBitrate;
+
+        return $this;
+    }
+
+    public function getMaxBitrate(): int
+    {
+        return $this->maxBitrate;
     }
 
     public function getHasAudio(): bool
