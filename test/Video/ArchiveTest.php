@@ -83,16 +83,21 @@ class ArchiveTest extends TestCase
         $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId) {
             $this->assertSame('/v2/project/' . $applicationId . '/archive', $request->getUri()->getPath());
             $this->assertSame('POST', $request->getMethod());
+            $this->assertRequestJsonBodyContains('maxBitrate', 2000000, $request);
 
             return true;
         }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('archive-start'));
 
         $expected = json_decode($this->getResponse('archive-start')->getBody()->getContents(), true);
-        $archive = $this->client->startArchive(new ArchiveConfig($sessionId));
+        $archiveConfig = new ArchiveConfig($sessionId);
+        $archiveConfig->setMaxBitrate(2000000);
+
+        $archive = $this->client->startArchive($archiveConfig);
 
         $this->assertSame($expected['id'], $archive->getId());
         $this->assertSame($expected['status'], $archive->getStatus());
         $this->assertSame($expected['name'], $archive->getName());
+        $this->assertSame($expected['maxBitrate'], $archive->getMaxBitrate());
         $this->assertSame($expected['reason'], $archive->getReason());
         $this->assertSame($expected['sessionId'], $archive->getSessionId());
         $this->assertSame($expected['applicationId'], $archive->getApplicationId());
@@ -108,6 +113,18 @@ class ArchiveTest extends TestCase
         $this->assertSame($expected['resolution'], $archive->getResolution());
         $this->assertSame($expected['event'], $archive->getEvent());
         $this->assertSame($expected['url'], $archive->getUrl());
+    }
+
+    public function cannotStartArchiveWithInvalidMaxBitrate(): void
+    {
+        $this->expectException(\OutOfBoundsException::class);
+
+        $sessionId = $this->sessionId;
+
+        $archiveConfig = new ArchiveConfig($sessionId);
+        $archiveConfig->setMaxBitrate(700);
+
+        $archive = $this->client->startArchive($archiveConfig);
     }
 
     public function testHandlesStartingArchiveOnceArchiveIsAlreadyStarted(): void
@@ -195,6 +212,7 @@ class ArchiveTest extends TestCase
         $this->assertSame($expected['id'], $archive->getId());
         $this->assertSame($expected['status'], $archive->getStatus());
         $this->assertSame($expected['name'], $archive->getName());
+        $this->assertSame($expected['maxBitrate'], $archive->getMaxBitrate());
         $this->assertSame($expected['reason'], $archive->getReason());
         $this->assertSame($expected['sessionId'], $archive->getSessionId());
         $this->assertSame($expected['applicationId'], $archive->getApplicationId());
