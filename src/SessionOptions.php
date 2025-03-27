@@ -32,7 +32,7 @@ class SessionOptions
     {
         $this->archiveMode = $data['archiveMode'] ?? ArchiveMode::MANUAL;
         $this->location = $data['location'] ?? null;
-        $this->mediaMode = $data['mediaMode'] ?? MediaMode::RELAYED;
+        $this->mediaMode = $data['mediaMode'] ?? $data['p2p.preferences'] ?? MediaMode::RELAYED;
         $this->e2ee = $data['e2ee'] ?? null;
     }
 

@@ -30,6 +30,7 @@ use Vonage\Video\Entity\IterableAPICollection;
 use Vonage\Video\MediaMode;
 use Vonage\Video\Role;
 use Vonage\Video\Resolution;
+use Vonage\Video\Session;
 
 class SessionTest extends TestCase
 {
@@ -77,7 +78,9 @@ class SessionTest extends TestCase
 
     public function testCanCreateSession(): void
     {
-        $this->vonageClient->send(Argument::that(function () {
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) {
+            // Underscore is used instead of period because of how parse_str() works
+            $this->assertRequestFormBodyContains('p2p_preference', MediaMode::RELAYED, $request);
             return true;
         }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('create-session'));
 
@@ -137,4 +140,23 @@ class SessionTest extends TestCase
 
         $this->client->sendSignal($sessionId, 'car', 'sedan', $connectionId);
     }
+
+    public function testFallbackForSessionsUsingMediaMode()
+    {
+        $session = new Session();
+        $session->fromArray([
+            'mediaMode' => MediaMode::RELAYED,
+        ]);
+        $this->assertEquals(MediaMode::RELAYED, $session->getMediaMode());
+    }
+
+    public function testFallbackForSessionsUsingP2P()
+    {
+        $session = new Session();
+        $session->fromArray([
+            'p2p.preference' => MediaMode::RELAYED,
+        ]);
+        $this->assertEquals(MediaMode::RELAYED, $session->getMediaMode());
+    }
+
 }

@@ -72,7 +72,7 @@ class Client implements APIClient
         }
 
         $data = [
-            'mediaMode' => $options->getMediaMode(),
+            'p2p.preference' => $options->getMediaMode(),
             'archiveMode' => $options->getArchiveMode(),
         ];
 

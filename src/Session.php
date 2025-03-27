@@ -29,7 +29,7 @@ class Session implements ArrayHydrateInterface
 
     public function getMediaMode(): string
     {
-        return $this->data['mediaMode'];
+        return $this->data['mediaMode'] ?? $this->data['p2p.preference'];
     }
 
     public function getMediaServerUrl(): string
