@@ -5,6 +5,6 @@ namespace Vonage\Video;
 
 class MediaMode
 {
-    public const RELAYED = 'disabled';
-    public const ROUTED = 'enabled';
+    public const RELAYED = 'enabled';
+    public const ROUTED = 'disabled';
 }
