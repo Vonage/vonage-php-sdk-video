@@ -228,6 +228,27 @@ class ArchiveTest extends TestCase
         $this->assertSame($expected['resolution'], $archive->getResolution());
         $this->assertSame($expected['event'], $archive->getEvent());
         $this->assertSame($expected['url'], $archive->getUrl());
+        $this->assertNull($archive->getQuantizationParameter());
+    }
+
+    public function testCanGetArchiveWtihQuantizationParameter(): void
+    {
+        $archiveId = '506efa9e-7849-410e-bf76-dafd80b1d94e';
+        $applicationId = $this->applicationId;
+
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $archiveId) {
+            $this->assertSame('/v2/project/' . $applicationId . '/archive/' . $archiveId, $request->getUri()->getPath());
+            $this->assertSame('GET', $request->getMethod());
+
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('get-archive-with-quantization'));
+
+        $expected = json_decode($this->getResponse('get-archive-with-quantization')->getBody()->getContents(), true);
+        $archive = $this->client->getArchive($archiveId);
+
+        $this->assertSame($expected['id'], $archive->getId());
+        $this->assertSame($expected['quantizationParameter'], $archive->getQuantizationParameter());
+        $this->assertNull($archive->getMaxBitrate());
     }
 
     public function testCanGetAllArchives(): void
@@ -312,5 +333,60 @@ class ArchiveTest extends TestCase
 
         $archive = $this->client->startArchive(new ArchiveConfig($sessionId));
         $this->assertEquals('', $archive->getResolution());
+    }
+
+    public function testWillStartArchiveWithMaxBitrate(): void
+    {
+        $sessionId = $this->sessionId;
+        $applicationId = $this->applicationId;
+
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId) {
+            $this->assertSame('/v2/project/' . $applicationId . '/archive', $request->getUri()->getPath());
+            $this->assertSame('POST', $request->getMethod());
+
+            $this->assertRequestJsonBodyContains('maxBitrate', ArchiveConfig::MAX_BITRATE - 42, $request);
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('archive-missing-resolution'));
+
+        $config = new ArchiveConfig($sessionId);
+        $config->setMaxBitrate(ArchiveConfig::MAX_BITRATE - 42);
+        $archive = $this->client->startArchive($config);
+        $this->assertEquals('', $archive->getResolution());
+    }
+    public function testWillStartArchiveWithQuantizationParameter(): void
+    {
+        $sessionId = $this->sessionId;
+        $applicationId = $this->applicationId;
+
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId) {
+            $this->assertSame('/v2/project/' . $applicationId . '/archive', $request->getUri()->getPath());
+            $this->assertSame('POST', $request->getMethod());
+
+            $this->assertRequestJsonBodyContains('quantizationParameter', ArchiveConfig::MAX_QUANT - 2, $request);
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('archive-missing-resolution'));
+
+        $config = new ArchiveConfig($sessionId);
+        $config->setQuantizationParameter(ArchiveConfig::MAX_QUANT - 2);
+        $archive = $this->client->startArchive($config);
+        $this->assertEquals('', $archive->getResolution());
+    }
+
+    public function testWillThrowExceptionWhenQuantizationParameterAndMaxBitrate(): void
+    {
+        $this->expectException(\DomainException::class);
+        $sessionId = $this->sessionId;
+        $config = new ArchiveConfig($sessionId);
+        $config->setMaxBitrate(ArchiveConfig::MAX_BITRATE - 42);
+        $config->setQuantizationParameter(ArchiveConfig::MAX_QUANT - 2);
+    }
+
+    public function testWillThrowExceptionWhenSettingMaxBitrateAndQuantizationParameter(): void
+    {
+        $this->expectException(\DomainException::class);
+        $sessionId = $this->sessionId;
+        $config = new ArchiveConfig($sessionId);
+        $config->setQuantizationParameter(ArchiveConfig::MAX_QUANT - 2);
+        $config->setMaxBitrate(ArchiveConfig::MAX_BITRATE - 42);
     }
 }
