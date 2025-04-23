@@ -22,6 +22,10 @@ class ArchiveConfig implements \JsonSerializable
 
     const MAX_BITRATE = 6000000;
 
+    const MAX_QUANT = 40;
+
+    const MIN_QUANT = 15;
+
     protected string $sessionId;
 
     protected bool $hasAudio = true;
@@ -49,6 +53,8 @@ class ArchiveConfig implements \JsonSerializable
      * @var string
      */
     protected $resolution;
+
+    protected $quantizationParameter;
 
     public function __construct(string $sessionId)
     {
@@ -148,8 +154,38 @@ class ArchiveConfig implements \JsonSerializable
         return $this->maxBitrate;
     }
 
+    public function getQuantizationParameter(): ?int
+    {
+        return $this->quantizationParameter;
+    }
+
+    public function setQuantizationParameter(int $quantizationParameter): self
+    {
+        if (isset($this->maxBitrate)) {
+            throw new \DomainException('QuantizationParameter cannot be set with maxBitrate');
+        }
+
+        $range = [
+            'options' => [
+                'min_range' => self::MIN_QUANT,
+                'max_range' => self::MAX_QUANT,
+            ]
+        ];
+
+        if (!filter_var($quantizationParameter, FILTER_VALIDATE_INT, $range)) {
+            throw new \OutOfBoundsException('QuantizationParameter ' . $quantizationParameter . ' is not valid');
+        }
+        $this->quantizationParameter = $quantizationParameter;
+
+        return $this;
+    }
+
     public function setMaxBitrate(?int $maxBitrate): ArchiveConfig
     {
+        if (isset($this->quantizationParameter)) {
+            throw new \DomainException('Max Bitrate cannot be set with QuantizationParameter  ');
+        }
+
         $range = [
             'options' => [
                 'min_range' => self::MIN_BITRATE,
@@ -194,6 +230,10 @@ class ArchiveConfig implements \JsonSerializable
 
         if ($this->getMaxBitrate()) {
             $data['maxBitrate'] = $this->getMaxBitrate();
+        }
+
+        if ($this->getQuantizationParameter()) {
+            $data['quantizationParameter'] = $this->getQuantizationParameter();
         }
 
         return $data;
