@@ -16,9 +16,22 @@ class WebsocketOptions implements ArrayHydrateInterface
 
     protected ?int $audioRate = null;
 
+    protected bool $bidirectional = false;
+
     public function __construct($data = [])
     {
         $this->fromArray($data);
+    }
+
+    public function getBidirectional(): bool
+    {
+        return $this->bidirectional;
+    }
+
+    public function setBidirectional(bool $bidirectional): self
+    {
+        $this->bidirectional = $bidirectional;
+        return $this;
     }
 
     public function getUri(): string
@@ -86,6 +99,10 @@ class WebsocketOptions implements ArrayHydrateInterface
             $this->audioRate = $data['audioRate'];
         }
 
+        if (isset($data['bidirectional'])) {
+            $this->bidirectional = (bool)$data['bidirectional'];
+        }
+
         return $this;
     }
 
@@ -105,6 +122,10 @@ class WebsocketOptions implements ArrayHydrateInterface
 
         if ($this->audioRate) {
             $data['audio_rate'] = $this->getAudioRate();
+        }
+
+        if ($this->bidirectional) {
+            $data['bidirectional'] = $this->getBidirectional();
         }
 
         return $data;
