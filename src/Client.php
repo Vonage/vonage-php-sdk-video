@@ -224,7 +224,7 @@ class Client implements APIClient
         return $response;
     }
 
-    public function listArchives(FilterInterface $filter = null): IterableAPICollection
+    public function listArchives(?FilterInterface $filter = null): IterableAPICollection
     {
         $response = $this->apiResource->search(
             $filter,
@@ -257,7 +257,7 @@ class Client implements APIClient
         return $response;
     }
     
-    public function listBroadcasts(FilterInterface $filter = null): IterableAPICollection
+    public function listBroadcasts(?FilterInterface $filter = null): IterableAPICollection
     {
         $response = $this->apiResource->search(
             $filter,
@@ -294,7 +294,7 @@ class Client implements APIClient
         );
     }
 
-    public function sendSignal(string $sessionId, string $type, string $data, string $connectionId = null): void
+    public function sendSignal(string $sessionId, string $type, string $data, ?string $connectionId = null): void
     {
         $url = '/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/signal';
         if ($connectionId) {

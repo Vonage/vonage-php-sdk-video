@@ -9,39 +9,44 @@ class Archive implements \JsonSerializable
      * Application the archive is associated with
      * @var string
      */
-    protected $applicationId;
+    protected string $applicationId;
 
     /**
      * Unix Timestamp the archive was created
      * @var int
      */
-    protected $createdAt;
+    protected int $createdAt;
 
     /**
      * Length in seconds of the archive
      * @var int
      */
-    protected $duration;
+    protected int $duration;
 
     /**
      * Event type of this message
      * @var string
      */
-    protected $event;
+    protected string $event;
 
     /**
      * Whether the archive has an audio stream
      * @var bool
      */
-    protected $hasAudio;
+    protected bool $hasAudio;
 
     /**
      * Whether the archive has a video stream
      * @var bool
      */
-    protected $hasVideo;
+    protected bool $hasVideo;
 
-    protected int $maxBitrate;
+    /**
+     * The maximum video bitrate for the archive (in bits per second)
+     * @var int|null
+     * @note This is mutally exclusive with quantizationParamter
+     */
+    protected ?int $maxBitrate;
 
     /**
      * ID of the archive
@@ -116,6 +121,16 @@ class Archive implements \JsonSerializable
     protected $url;
 
     /**
+     * The quantization parameter (QP) is an optional video encoding value allowed for
+     * composed archiving, smaller values generate higher quality and larger archives,
+     * larger values generate lower quality and smaller archives, QP uses
+     * variable bitrate (VBR)
+     * @var int
+     * @note This is mutually exclusive to maxBitRate
+     */
+    protected $quantizationParameter;
+
+    /**
      * @param array<string, mixed> $data
      */
     public function __construct(array $data = [])
@@ -134,8 +149,12 @@ class Archive implements \JsonSerializable
         $this->hasVideo = $data['hasVideo'];
 
         if (isset($data['maxBitrate'])) {
-            $this->maxBitrate = $data['maxBitrate'];
+            $this->setMaxBitrate($data['maxBitrate']);
         }
+
+       if (isset($data['quantizationParameter'])) {
+           $this->setQuantizationParameter($data['quantizationParameter']);
+       }
 
         $this->sha256sum = $data['sha256sum'];
         $this->password = $data['password'];
@@ -172,8 +191,11 @@ class Archive implements \JsonSerializable
         return $this;
     }
 
-    public function getMaxBitrate(): int
+    public function getMaxBitrate(): ?int
     {
+        if (!isset($this->maxBitrate)) {
+            return null;
+        }
         return $this->maxBitrate;
     }
 
@@ -247,6 +269,21 @@ class Archive implements \JsonSerializable
         return $this->url;
     }
 
+    public function getQuantizationParameter(): ?int
+    {
+        if (!isset($this->quantizationParameter)) {
+            return null;
+        }
+
+        return $this->quantizationParameter;
+    }
+
+    public function setQuantizationParameter(int $quantizationParameter): self
+    {
+        $this->quantizationParameter = $quantizationParameter;
+
+        return $this;
+    }
     /**
      * @return array<string, mixed>
      */
@@ -271,6 +308,8 @@ class Archive implements \JsonSerializable
             'resolution' => $this->resolution,
             'event' => $this->event,
             'url' => $this->url,
+            'quantizationParameter' => $this->quantizationParameter,
+            'maxBitrate' => $this->maxBitrate,
         ];
     }
 
