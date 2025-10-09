@@ -182,7 +182,7 @@ class Client implements APIClient
 
         $options = array_merge($defaults, $options);
 
-        return TokenGenerator::factory($this->credentials->getApplication(), $this->credentials->key, $options);
+        return TokenGenerator::factory($this->credentials->getApplication(), $this->credentials->getKeyRaw(), $options);
     }
 
     public function getArchive(string $archiveId): Archive
