@@ -11,16 +11,6 @@ parameters:
 			path: src/Broadcast/OutputConfig.php
 
 		-
-			message: "#^Access to protected property Vonage\\\\Client\\\\Credentials\\\\Keypair\\:\\:\\$application\\.$#"
-			count: 35
-			path: src/Client.php
-
-		-
-			message: "#^Access to protected property Vonage\\\\Client\\\\Credentials\\\\Keypair\\:\\:\\$key\\.$#"
-			count: 1
-			path: src/Client.php
-
-		-
 			message: "#^PHPDoc tag @param references unknown parameter\\: \\$excludedStreams$#"
 			count: 2
 			path: src/Client.php

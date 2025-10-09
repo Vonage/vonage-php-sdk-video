@@ -265,4 +265,25 @@ class ClientTest extends TestCase
 
         $this->assertEquals(2, $response->count());
     }
+
+    public function testCanListConnections(): void
+    {
+        $applicationId = $this->applicationId;
+        $sessionId = 'abcd';
+
+        $this->vonageClient->send(Argument::that(function (RequestInterface $request) use ($applicationId, $sessionId) {
+            $this->assertSame('/v2/project/' . $applicationId . '/session/' . $sessionId . '/connection', $request->getUri()->getPath());
+            $this->assertSame('GET', $request->getMethod());
+
+            return true;
+        }))->shouldBeCalledTimes(1)->willReturn($this->getResponse('connection-list', 200));
+        $response = $this->client->listConnections($sessionId);
+
+        $this->assertEquals(5, $response->count());
+        $connection = $response->current();
+        $this->assertInstanceOf(\Vonage\Video\Connection\Connection::class, $connection);
+        $this->assertEquals('527775e1-626e-42c3-b0e8-e2122d20661a', $connection->connectionId);
+        $this->assertEquals('1747655658197', $connection->createdAt->format('U'));
+        $this->assertEquals('Connected', $connection->connectionState->value);
+    }
 }
