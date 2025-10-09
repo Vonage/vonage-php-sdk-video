@@ -20,6 +20,7 @@ use Vonage\Video\Archive\Archive;
 use Vonage\Video\Archive\ArchiveConfig;
 use Vonage\Video\Archive\ArchiveLayout;
 use Vonage\Client\Credentials\CredentialsInterface;
+use Vonage\Video\Connection\Connection;
 use Vonage\Video\Render;
 
 class Client implements APIClient
@@ -241,22 +242,6 @@ class Client implements APIClient
         return $response;
     }
 
-    public function listStreams(string $sessionId): IterableAPICollection
-    {
-        $response = $this->apiResource->search(
-            null,
-            '/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/stream',
-        );
-        $response->getApiResource()->setBaseUri('/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/stream');
-
-        $hydrator = new ConstructorHydrator();
-        $hydrator->setPrototype(Stream::class);
-        $response->setHydrator($hydrator);
-        $response->setNaiveCount(true);
-
-        return $response;
-    }
-    
     public function listBroadcasts(?FilterInterface $filter = null): IterableAPICollection
     {
         $response = $this->apiResource->search(
@@ -269,6 +254,39 @@ class Client implements APIClient
         $hydrator->setPrototype(Broadcast::class);
         $response->setHydrator($hydrator);
         $response->getApiResource()->setCollectionName('items');
+
+        return $response;
+    }
+
+    public function listConnections(string $sessionId, ?FilterInterface $filter = null): IterableAPICollection
+    {
+        $response = $this->apiResource->search(
+            $filter,
+            '/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/connection',
+        );
+        $response->getApiResource()->setBaseUri('/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/connection');
+
+        $hydrator = new ConstructorHydrator();
+        $hydrator->setPrototype(Connection::class);
+        $response->setHydrator($hydrator);
+        $response->setNaiveCount(true);
+        $response->getApiResource()->setCollectionName('items');
+
+        return $response;
+    }
+
+    public function listStreams(string $sessionId): IterableAPICollection
+    {
+        $response = $this->apiResource->search(
+            null,
+            '/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/stream',
+        );
+        $response->getApiResource()->setBaseUri('/v2/project/' . $this->credentials->application . '/session/' . $sessionId . '/stream');
+
+        $hydrator = new ConstructorHydrator();
+        $hydrator->setPrototype(Stream::class);
+        $response->setHydrator($hydrator);
+        $response->setNaiveCount(true);
 
         return $response;
     }
