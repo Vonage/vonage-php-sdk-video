@@ -160,7 +160,6 @@ class IterableAPICollection extends EntityIterableAPICollection
             $json = [];
         }
 
-        // @phpstan-ignore-next-line (parent class has incorrect type annotation for cache)
         $this->cache[md5($requestUri)] = $json;
         $this->pageData = $json;
 
