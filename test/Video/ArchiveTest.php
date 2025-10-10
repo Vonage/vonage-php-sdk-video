@@ -2,17 +2,11 @@
 
 namespace VonageTest\Video;
 
-use Lcobucci\JWT\Encoding\JoseEncoder;
-use Lcobucci\JWT\Token\Parser;
 use Prophecy\Argument;
-use Vonage\Video\CaptionOptions;
 use Vonage\Video\Client;
 use Vonage\Client\APIResource;
 use PHPUnit\Framework\TestCase;
 use Vonage\Client as VonageClient;
-use Vonage\Video\Render;
-use Vonage\Video\SessionOptions;
-use Vonage\Video\WebsocketOptions;
 use VonageTest\HttpResponseTrait;
 use VonageTest\Psr7AssertionTrait;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -22,14 +16,7 @@ use Vonage\Client\Credentials\Keypair;
 use Vonage\Client\Exception\Request;
 use Vonage\Video\Archive\ArchiveConfig;
 use Vonage\Video\Archive\ArchiveLayout;
-use Vonage\Video\Archive\ArchiveMode;
-use Vonage\Video\Broadcast\BroadcastConfig;
-use Vonage\Video\Broadcast\OutputConfig;
-use Vonage\Video\Broadcast\Stream;
 use Vonage\Video\Entity\IterableAPICollection;
-use Vonage\Video\MediaMode;
-use Vonage\Video\Role;
-use Vonage\Video\Resolution;
 
 class ArchiveTest extends TestCase
 {
@@ -286,6 +273,16 @@ class ArchiveTest extends TestCase
             $this->assertSame($expected['items'][$key]['resolution'], $archive->getResolution());
             $this->assertSame($expected['items'][$key]['event'], $archive->getEvent());
             $this->assertSame($expected['items'][$key]['url'], $archive->getUrl());
+
+            if ($key == 1) {
+                $this->assertNotNull($archive->getTranscription());
+                $this->assertSame('uploaded', $archive->getTranscription()?->status->value);
+                $this->assertSame('https://example.com/transcription/file.zip', $archive->getTranscription()?->url);
+                $this->assertSame('Failure reason if applicable', $archive->getTranscription()?->reason);
+                $this->assertSame('en-US', $archive->getTranscription()?->primaryLanguageCode);
+                $this->assertFalse($archive->getTranscription()?->hasSummary);
+            }
+
             $key++;
         }
     }

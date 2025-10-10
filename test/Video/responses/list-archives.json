@@ -39,7 +39,15 @@
             "updatedAt": 1621001438000,
             "resolution": "640x480",
             "event": "archive",
-            "url": null
+            "url": null,
+            "hasTranscription": true,
+            "transcription": {
+                "primaryLanguageCode": "en-US",
+                "hasSummary": false,
+                "status": "uploaded",
+                "url": "https://example.com/transcription/file.zip",
+                "reason": "Failure reason if applicable"
+            }
         }
     ]
 }
