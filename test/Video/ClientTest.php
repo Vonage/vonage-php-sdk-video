@@ -23,6 +23,7 @@ use Vonage\Client\Exception\Request;
 use Vonage\Video\Archive\ArchiveConfig;
 use Vonage\Video\Archive\ArchiveLayout;
 use Vonage\Video\Archive\ArchiveMode;
+use Vonage\Video\Archive\Archive;
 use Vonage\Video\Broadcast\BroadcastConfig;
 use Vonage\Video\Broadcast\OutputConfig;
 use Vonage\Video\Broadcast\Stream;

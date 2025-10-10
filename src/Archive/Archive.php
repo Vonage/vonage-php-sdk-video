@@ -52,73 +52,73 @@ class Archive implements \JsonSerializable
      * ID of the archive
      * @var string
      */
-    protected $id;
+    protected string $id;
 
     /**
      * Name of the archive
      * @var string
      */
-    protected $name;
+    protected string $name;
 
     /**
      * Output mode of the video
      * @var string
      */
-    protected $outputMode;
+    protected string $outputMode;
 
     /**
      * Password of the archive file
      * @var string
      */
-    protected $password;
+    protected string $password;
 
     /**
      * Reason archive was stopped
      * @var string
      */
-    protected $reason;
+    protected string $reason;
 
     /**
      * Resolution of the archived video
      * @var string
      */
-    protected $resolution;
+    protected string$resolution;
 
     /**
      * Session the archive is associated with
      * @var string
      */
-    protected $sessionId;
+    protected string $sessionId;
     
     /**
      * SHA256 Hash of the video file
      * @var string
      */
-    protected $sha256sum;
+    protected string $sha256sum;
 
     /**
      * Size of the archive file
      * @var int
      */
-    protected $size;
+    protected int $size;
 
     /**
      * Current status of the archive
      * @var string
      */
-    protected $status;
+    protected string $status;
 
     /**
      * Unix timestamp of the last time this archive was updated
      * @var int
      */
-    protected $updatedAt;
+    protected int $updatedAt;
 
     /**
      * Download URL of the archive, if available
      * @var string
      */
-    protected $url;
+    protected ?string $url;
 
     /**
      * The quantization parameter (QP) is an optional video encoding value allowed for
@@ -128,7 +128,13 @@ class Archive implements \JsonSerializable
      * @var int
      * @note This is mutually exclusive to maxBitRate
      */
-    protected $quantizationParameter;
+    protected ?int $quantizationParameter;
+
+    protected bool $hasTranscription;
+
+    protected ?TranscriptionOptions $transcriptionOptions = null;
+
+    protected ?Transcription $transcription = null;
 
     /**
      * @param array<string, mixed> $data
@@ -162,6 +168,24 @@ class Archive implements \JsonSerializable
         $this->resolution = $data['resolution'] ?? '';
         $this->event = $data['event'];
         $this->url = $data['url'];
+        $this->hasTranscription = $data['hasTranscription'] ?? false;
+
+        // Need to handle new archives being created
+        if (isset($data['transcriptionOptions']) && is_array($data['transcriptionOptions'])) {
+            $this->transcriptionOptions = new TranscriptionOptions(
+                $data['transcriptionOptions']['primaryLanguageCode'] ?? 'en-US',
+                $data['transcriptionOptions']['hasSummary'] ?? false
+            );
+        }
+
+        // Data from an archive already in flight
+        if (isset($data['transcription']) && is_array($data['transcription'])) {
+            $this->transcription = new Transcription($data['transcription']);
+        }
+
+        if ($this->transcription && $this->transcriptionOptions) {
+            throw new \InvalidArgumentException('Cannot set both transcription and transcriptionOptions');
+        }
     }
 
     public function getApplicationId(): string
@@ -284,6 +308,46 @@ class Archive implements \JsonSerializable
 
         return $this;
     }
+
+    public function hasTranscription(): bool
+    {
+        return $this->hasTranscription;
+    }
+
+    public function setHasTranscription(bool $hasTranscription): self
+    {
+        $this->hasTranscription = $hasTranscription;
+        return $this;
+    }
+
+    public function getTranscriptionOptions(): ?TranscriptionOptions
+    {
+        if (isset($this->transcription)) {
+            throw new \RuntimeException('Transcription is already set, cannot get transcriptionOptions');
+        }
+        return $this->transcriptionOptions;
+    }
+
+    public function setTranscriptionOptions(?TranscriptionOptions $options): self
+    {
+        $this->transcriptionOptions = $options;
+        return $this;
+    }
+
+    public function getTranscription(): ?Transcription
+    {
+        return $this->transcription;
+    }
+
+    public function setTranscription(?Transcription $transcription): self
+    {
+         if (isset($this->transcriptionOptions)) {
+            throw new \RuntimeException('Transcription Options is already set, cannot get transcription data');
+        }
+        $this->transcription = $transcription;
+        return $this;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -310,6 +374,8 @@ class Archive implements \JsonSerializable
             'url' => $this->url,
             'quantizationParameter' => $this->quantizationParameter,
             'maxBitrate' => $this->maxBitrate,
+            'hasTranscription' => $this->hasTranscription,
+
         ];
     }
 
